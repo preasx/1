@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dynamic Subdomain Loader</title>
+  <title>D-TECH Dynamic Loader</title>
+  <link rel="preconnect" href="https://gist.githubusercontent.com">
   <style>
     html, body {
       margin: 0; padding: 0; height: 100%;
-      font-family: Arial, sans-serif;
       background: #111;
       color: #eee;
       display: flex;
@@ -29,11 +29,11 @@
 </head>
 <body>
   <div id="status">🔄 Loading...</div>
-  <iframe id="content"></iframe>
+  <iframe id="content" loading="lazy"></iframe>
 
   <script>
     (async () => {
-      const hostname = window.location.hostname;
+      const hostname = location.hostname;
       const subdomain = hostname.split('.')[0];
       const baseDomain = "ulenabler.co.za";
 
@@ -45,20 +45,19 @@
       const gistURL = "https://gist.githubusercontent.com/Preasx24/451a35def0daf123212fcb9729d3dfdd/raw/gistfile1.txt";
 
       try {
-        const res = await fetch(gistURL, {cache: "no-store"});
-        if (!res.ok) throw new Error("Failed to fetch mapping");
-        const map = await res.json();
+        const res = await fetch(gistURL, { cache: "no-store" });
+        if (!res.ok) throw new Error("Mapping fetch failed");
 
-        if (!map[subdomain]) {
-          document.getElementById('status').textContent = "❌ No URL mapped for this subdomain.";
+        const map = await res.json();
+        const entry = map[subdomain];
+        if (!entry) {
+          document.getElementById('status').textContent = "❌ No mapping for this subdomain.";
           return;
         }
 
-        const { url, expires } = map[subdomain];
-        const now = Math.floor(Date.now() / 1000);
-
-        if (expires < now) {
-          document.getElementById('status').textContent = "⏰ Mapping expired.";
+        const { url, expires } = entry;
+        if (expires < Math.floor(Date.now() / 1000)) {
+          document.getElementById('status').textContent = "⏰ This mapping has expired.";
           return;
         }
 
@@ -67,9 +66,9 @@
         iframe.style.display = "block";
         document.getElementById('status').style.display = "none";
 
-      } catch (e) {
+      } catch (err) {
         document.getElementById('status').textContent = "⚠️ Failed to load mapping.";
-        console.error(e);
+        console.error(err);
       }
     })();
   </script>
