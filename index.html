@@ -1,76 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>D-TECH Dynamic Loader</title>
-  <link rel="preconnect" href="https://gist.githubusercontent.com">
+  <meta charset="UTF-8">
+  <title>Loading...</title>
   <style>
-    html, body {
-      margin: 0; padding: 0; height: 100%;
-      background: #111;
-      color: #eee;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-    #status {
-      font-size: 1.2em;
-      margin-top: 1em;
-    }
-    iframe {
-      width: 100vw;
-      height: 100vh;
+    html, body, iframe {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
       border: none;
-      display: none;
+      background: #000;
     }
   </style>
 </head>
 <body>
-  <div id="status">🔄 Loading...</div>
-  <iframe id="content" loading="lazy"></iframe>
+<script>
+  (async () => {
+    const subdomain = location.hostname.split('.')[0];
+    const mappingUrl = "https://gist.githubusercontent.com/Preasx24/451a35def0daf123212fcb9729d3dfdd/raw/gistfile1.txt";
 
-  <script>
-    (async () => {
-      const hostname = location.hostname;
-      const subdomain = hostname.split('.')[0];
-      const baseDomain = "ulenabler.co.za";
+    try {
+      const res = await fetch(mappingUrl);
+      const mapping = await res.json();
+      const target = mapping[subdomain];
 
-      if (hostname === baseDomain || hostname === `www.${baseDomain}`) {
-        document.getElementById('status').textContent = "You are on the root domain.";
+      if (!target) {
+        document.body.innerHTML = "<h1 style='color:white;text-align:center;margin-top:2em'>🔍 Page Not Found</h1>";
         return;
       }
 
-      const gistURL = "https://gist.githubusercontent.com/Preasx24/451a35def0daf123212fcb9729d3dfdd/raw/gistfile1.txt";
-
-      try {
-        const res = await fetch(gistURL, { cache: "no-store" });
-        if (!res.ok) throw new Error("Mapping fetch failed");
-
-        const map = await res.json();
-        const entry = map[subdomain];
-        if (!entry) {
-          document.getElementById('status').textContent = "❌ No mapping for this subdomain.";
-          return;
-        }
-
-        const { url, expires } = entry;
-        if (expires < Math.floor(Date.now() / 1000)) {
-          document.getElementById('status').textContent = "⏰ This mapping has expired.";
-          return;
-        }
-
-        const iframe = document.getElementById('content');
-        iframe.src = url;
-        iframe.style.display = "block";
-        document.getElementById('status').style.display = "none";
-
-      } catch (err) {
-        document.getElementById('status').textContent = "⚠️ Failed to load mapping.";
-        console.error(err);
-      }
-    })();
-  </script>
+      const iframe = document.createElement("iframe");
+      iframe.src = target;
+      iframe.allowFullscreen = true;
+      document.body.appendChild(iframe);
+    } catch (err) {
+      document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:2em'>❌ Error Loading</h1>";
+    }
+  })();
+</script>
 </body>
 </html>
