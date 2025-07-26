@@ -2,54 +2,73 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dynamic Subdomain Loader</title>
   <style>
-    body {
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-family: sans-serif;
-      height: 100vh;
-      margin: 0;
-      background-color: #111;
-      color: #eee;
       flex-direction: column;
     }
-    small { margin-top: 1em; color: #888; }
+    #status {
+      font-size: 1.2em;
+      margin-top: 1em;
+    }
+    iframe {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <h2>🔁 Redirecting...</h2>
-  <small id="status">Please wait</small>
+  <div id="status">🔄 Loading...</div>
+  <iframe id="content"></iframe>
 
   <script>
     (async () => {
-      const host = window.location.hostname;
-      const subdomain = host.split('.')[0];
-      const gistUrl = "https://gist.githubusercontent.com/Preasx24/451a35def0daf123212fcb9729d3dfdd/raw/gistfile1.txt";
+      const hostname = window.location.hostname;
+      const subdomain = hostname.split('.')[0];
+      const baseDomain = "ulenabler.co.za";
 
-      const status = document.getElementById("status");
+      if (hostname === baseDomain || hostname === `www.${baseDomain}`) {
+        document.getElementById('status').textContent = "You are on the root domain.";
+        return;
+      }
+
+      const gistURL = "https://gist.githubusercontent.com/Preasx24/451a35def0daf123212fcb9729d3dfdd/raw/gistfile1.txt";
 
       try {
-        const res = await fetch(gistUrl, { cache: "no-store" });
-        const json = await res.json();
+        const res = await fetch(gistURL, {cache: "no-store"});
+        if (!res.ok) throw new Error("Failed to fetch mapping");
+        const map = await res.json();
 
-        if (json[subdomain]) {
-          const entry = json[subdomain];
-          const now = Date.now() / 1000;
-
-          if (entry.expires > now) {
-            status.textContent = "Found. Redirecting now...";
-            window.location.href = entry.url;
-          } else {
-            status.textContent = "⏱️ Link expired.";
-          }
-        } else {
-          status.textContent = "❌ No URL mapped for this subdomain.";
+        if (!map[subdomain]) {
+          document.getElementById('status').textContent = "❌ No URL mapped for this subdomain.";
+          return;
         }
+
+        const { url, expires } = map[subdomain];
+        const now = Math.floor(Date.now() / 1000);
+
+        if (expires < now) {
+          document.getElementById('status').textContent = "⏰ Mapping expired.";
+          return;
+        }
+
+        const iframe = document.getElementById('content');
+        iframe.src = url;
+        iframe.style.display = "block";
+        document.getElementById('status').style.display = "none";
+
       } catch (e) {
-        status.textContent = "⚠️ Failed to fetch redirect map.";
+        document.getElementById('status').textContent = "⚠️ Failed to load mapping.";
         console.error(e);
       }
     })();
