@@ -1,38 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Dynamic Subdomain Mapper</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Redirecting...</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: sans-serif;
+      height: 100vh;
+      margin: 0;
+      background-color: #111;
+      color: #eee;
+      flex-direction: column;
+    }
+    small { margin-top: 1em; color: #888; }
+  </style>
 </head>
 <body>
-  <div id="status">🔄 Loading...</div>
-  <iframe id="loader" style="width:100%;height:100vh;border:none;display:none;"></iframe>
+  <h2>🔁 Redirecting...</h2>
+  <small id="status">Please wait</small>
 
   <script>
-    const sub = location.hostname.split('.')[0];
-    const mapURL = "https://gist.githubusercontent.com/Preasx24/451a35def0daf123212fcb9729d3dfdd/raw/gistfile1.txt";
+    (async () => {
+      const host = window.location.hostname;
+      const subdomain = host.split('.')[0];
+      const gistUrl = "https://gist.githubusercontent.com/Preasx24/451a35def0daf123212fcb9729d3dfdd/raw/gistfile1.txt";
 
-    fetch(mapURL)
-      .then(res => res.json())
-      .then(data => {
-        if (!data[sub]) {
-          document.getElementById("status").innerText = "❌ Subdomain not found in mapping.";
-          return;
+      const status = document.getElementById("status");
+
+      try {
+        const res = await fetch(gistUrl, { cache: "no-store" });
+        const json = await res.json();
+
+        if (json[subdomain]) {
+          const entry = json[subdomain];
+          const now = Date.now() / 1000;
+
+          if (entry.expires > now) {
+            status.textContent = "Found. Redirecting now...";
+            window.location.href = entry.url;
+          } else {
+            status.textContent = "⏱️ Link expired.";
+          }
+        } else {
+          status.textContent = "❌ No URL mapped for this subdomain.";
         }
-
-        const { url, expires } = data[sub];
-        if (Date.now() / 1000 > expires) {
-          document.getElementById("status").innerText = "⏰ Mapping expired.";
-          return;
-        }
-
-        document.getElementById("loader").src = url;
-        document.getElementById("loader").style.display = "block";
-        document.getElementById("status").style.display = "none";
-      })
-      .catch(err => {
-        document.getElementById("status").innerText = "⚠️ Failed to load mapping.";
-      });
+      } catch (e) {
+        status.textContent = "⚠️ Failed to fetch redirect map.";
+        console.error(e);
+      }
+    })();
   </script>
 </body>
 </html>
