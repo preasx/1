@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Cookie Login Tool</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      margin-bottom: 10px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🍪 Paste Cookies to Auto Login</h2>
+
+  <textarea id="cookieInput" placeholder="Paste your cookie string here..."></textarea>
+
+  <input type="text" id="targetDomain" placeholder="e.g. netflix.com or crunchyroll.com" />
+
+  <button onclick="injectCookies()">Inject Cookies & Refresh</button>
+
+  <script>
+    function injectCookies() {
+      const cookieStr = document.getElementById("cookieInput").value;
+      const domain = document.getElementById("targetDomain").value.trim();
+
+      if (!cookieStr || !domain) {
+        alert("Enter both the cookie and domain.");
+        return;
+      }
+
+      // Try to apply each cookie key=value
+      const cookies = cookieStr.split(";");
+
+      cookies.forEach(cookie => {
+        document.cookie = cookie.trim() + "; domain=." + domain + "; path=/";
+      });
+
+      alert("✅ Cookies injected for ." + domain + "!\nNow reloading page...");
+
+      // Redirect to the domain
+      location.href = "https://" + domain;
+    }
+  </script>
+
+</body>
+</html>
