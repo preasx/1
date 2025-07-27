@@ -34,6 +34,25 @@
       iframe.src = target;
       iframe.allowFullscreen = true;
       document.body.appendChild(iframe);
+
+      // Break out on iframe navigation change
+      let initialUrl = new URL(target).origin;
+
+      // Polling method (works even if we don't control the iframe's origin)
+      const checkNavigation = setInterval(() => {
+        try {
+          const current = iframe.contentWindow.location.href;
+          if (!current.startsWith(initialUrl)) {
+            clearInterval(checkNavigation);
+            window.location.href = current;  // Break out to full screen
+          }
+        } catch (e) {
+          // Likely cross-origin — redirect outside anyway
+          clearInterval(checkNavigation);
+          window.location.href = iframe.src;
+        }
+      }, 1000); // Check every second
+
     } catch (err) {
       document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:2em'>❌ Error Loading</h1>";
     }
