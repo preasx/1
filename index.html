@@ -35,23 +35,38 @@
       iframe.allowFullscreen = true;
       document.body.appendChild(iframe);
 
-      // Break out on iframe navigation change
-      let initialUrl = new URL(target).origin;
+      const initialOrigin = new URL(target).origin;
 
-      // Polling method (works even if we don't control the iframe's origin)
+      // Prevent navigation hijacking: detect iframe navigation change
       const checkNavigation = setInterval(() => {
         try {
           const current = iframe.contentWindow.location.href;
-          if (!current.startsWith(initialUrl)) {
+          if (!current.startsWith(initialOrigin)) {
             clearInterval(checkNavigation);
-            window.location.href = current;  // Break out to full screen
+            window.location.href = current;
           }
         } catch (e) {
-          // Likely cross-origin — redirect outside anyway
+          // Cross-origin — assume external navigation attempted
           clearInterval(checkNavigation);
           window.location.href = iframe.src;
         }
-      }, 1000); // Check every second
+      }, 1000);
+
+      // Inject script into iframe to force all external links to open in _blank
+      iframe.onload = () => {
+        try {
+          const links = iframe.contentDocument.querySelectorAll('a[href]');
+          links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith(initialOrigin) && !href.startsWith('#')) {
+              link.setAttribute('target', '_blank');
+              link.setAttribute('rel', 'noopener noreferrer');
+            }
+          });
+        } catch (e) {
+          // Cross-origin, can't access iframe content — no-op
+        }
+      };
 
     } catch (err) {
       document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:2em'>❌ Error Loading</h1>";
